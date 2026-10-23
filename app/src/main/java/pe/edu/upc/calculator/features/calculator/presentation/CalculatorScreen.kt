@@ -42,7 +42,6 @@ import androidx.compose.ui.unit.sp
 import kotlin.time.Duration.Companion.milliseconds
 import androidx.compose.ui.res.stringResource
 import pe.edu.upc.calculator.R
-import pe.edu.upc.calculator.features.calculator.presentation.CalculatorHistory
 import pe.edu.upc.calculator.features.calculator.domain.ExpressionError
 import pe.edu.upc.calculator.core.designsystems.theme.CalculatorBackground
 import pe.edu.upc.calculator.features.calculator.domain.HistoryItem
@@ -94,6 +93,9 @@ fun CalculatorScreen(
 
             ExpressionError.INVALID_NUMBER ->
                 R.string.error_invalid_number
+
+            ExpressionError.DIGIT_LIMIT ->
+                R.string.error_digit_limit
         }
 
         stringResource(resourceId)
