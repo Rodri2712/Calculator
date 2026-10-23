@@ -19,6 +19,7 @@ import pe.edu.upc.calculator.features.calculator.application.ClearHistoryUseCase
 import pe.edu.upc.calculator.features.calculator.application.GetHistoryUseCase
 import pe.edu.upc.calculator.features.calculator.application.SaveHistoryUseCase
 import pe.edu.upc.calculator.features.calculator.domain.HistoryItem
+import pe.edu.upc.calculator.features.calculator.domain.ExpressionError
 
 @HiltViewModel
 class CalculatorViewModel @Inject constructor(
@@ -66,6 +67,13 @@ class CalculatorViewModel @Inject constructor(
                 value = value,
                 justCalculated = justCalculated
             )
+
+            if (result.display.count { it.isDigit() } > 15) {
+                return@update current.copy(
+                    error = ExpressionError.DIGIT_LIMIT,
+                    errorToastId = current.errorToastId + 1
+                )
+            }
 
             current.copy(
                 display = result.display,
