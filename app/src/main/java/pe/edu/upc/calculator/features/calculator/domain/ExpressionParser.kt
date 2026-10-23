@@ -9,7 +9,8 @@ enum class ExpressionError {
     UNCLOSED_PARENTHESIS,
     INVALID_DECIMAL,
     EXPECTED_NUMBER,
-    INVALID_NUMBER
+    INVALID_NUMBER,
+    DIGIT_LIMIT
 }
 
 class ExpressionParseException(
