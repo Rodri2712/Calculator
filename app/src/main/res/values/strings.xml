@@ -1,23 +1,23 @@
-<resources>
-    <string name="app_name">calculator</string>
+﻿<resources>
+    <string name="app_name">Calculadora 2.0</string>
 
     <!-- Historial -->
     <string name="history_title">Historial</string>
-    <string name="history_empty">Tus operaciones aparecerán aquí</string>
+    <string name="history_empty">Tus operaciones aparecerÃ¡n aquÃ­</string>
     <string name="history_clear">Eliminar historial</string>
 
     <!-- Calculadora -->
     <string name="calculator_error">Error</string>
 
     <!-- Mensajes de error -->
-    <string name="error_empty_expression">Expresión vacía</string>
-    <string name="error_incomplete_expression">Expresión incompleta</string>
-    <string name="error_invalid_result">Resultado no válido</string>
+    <string name="error_empty_expression">ExpresiÃ³n vacÃ­a</string>
+    <string name="error_incomplete_expression">ExpresiÃ³n incompleta</string>
+    <string name="error_invalid_result">Resultado no vÃ¡lido</string>
     <string name="error_division_by_zero">No se puede dividir entre cero</string>
-    <string name="error_invalid_percentage">Porcentaje no válido</string>
-    <string name="error_unclosed_parenthesis">Falta cerrar un paréntesis</string>
-    <string name="error_invalid_decimal">Número decimal no válido</string>
-    <string name="error_expected_number">Se esperaba un número</string>
-    <string name="error_invalid_number">Número no válido</string>
+    <string name="error_invalid_percentage">Porcentaje no vÃ¡lido</string>
+    <string name="error_unclosed_parenthesis">Falta cerrar un parÃ©ntesis</string>
+    <string name="error_invalid_decimal">NÃºmero decimal no vÃ¡lido</string>
+    <string name="error_expected_number">Se esperaba un nÃºmero</string>
+    <string name="error_invalid_number">NÃºmero no vÃ¡lido</string>
 
 </resources>
