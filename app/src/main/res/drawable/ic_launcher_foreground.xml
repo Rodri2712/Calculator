@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <group
+        android:scaleX="0.20"
+        android:scaleY="0.20"
+        android:translateX="48.8"
+        android:translateY="48.8">
+
+        <!-- Círculo superior -->
+        <path
+            android:fillColor="#FF262626"
+            android:pathData="M154.8,64.6
+                a90.5,90.5 0 1,0 0,181
+                a90.5,90.5 0 1,0 0,-181 Z" />
+
+        <!-- Círculo inferior -->
+        <path
+            android:fillColor="#FF262626"
+            android:pathData="M154.8,266.6
+                a90.5,90.5 0 1,0 0,181
+                a90.5,90.5 0 1,0 0,-181 Z" />
+
+        <!-- Barra verde -->
+        <path
+            android:fillColor="#FF2583D8"
+            android:pathData="M357.3,64.5
+                c50.1,0 90.7,40.6 90.7,90.7
+                v201.6
+                c0,50.1 -40.6,90.7 -90.7,90.7
+                s-90.7,-40.6 -90.7,-90.7
+                V155.2
+                c0,-50.1 40.6,-90.7 90.7,-90.7 Z" />
+
+        <!-- Símbolo + -->
+        <path
+            android:fillColor="#FFB5B5B5"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="20"
+            android:strokeLineCap="round"
+            android:pathData="M154.8,118.7 v72.8
+                m-36.1,-36.4 h72.5" />
+
+        <!-- Símbolo - -->
+        <path
+            android:fillColor="#FFB5B5B5"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="20"
+            android:strokeLineCap="round"
+            android:pathData="M120.5,356.3 l68.1,-0.7" />
+
+        <!-- Símbolo = -->
+        <path
+            android:fillColor="#FFB5B5B5"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="20"
+            android:strokeLineCap="round"
+            android:pathData="M323,234.9 h68.6
+                M323,277.2 h68.6" />
+
+    </group>
+</vector>

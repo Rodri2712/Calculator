@@ -1,0 +1,42 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- 1. Marco exterior con trazo grueso y redondeado -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:strokeLineJoin="round"
+        android:pathData="M6,3 L18,3 A3,3 0 0,1 21,6 L21,18 A3,3 0 0,1 18,21 L6,21 A3,3 0 0,1 3,18 L3,6 A3,3 0 0,1 6,3 Z" />
+
+    <!-- 2. Pantalla superior (Rectángulo relleno con esquinas redondeadas) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M7,6 L17,6 A1,1 0 0,1 18,7 L18,8.5 A1,1 0 0,1 17,9.5 L7,9.5 A1,1 0 0,1 6,8.5 L6,7 A1,1 0 0,1 7,6 Z" />
+
+    <!-- 3. Botones (Círculos rellenos) -->
+    <!-- Fila 1 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M8.5,13.5 A1,1 0 1,1 8.5,11.5 A1,1 0 1,1 8.5,13.5 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,13.5 A1,1 0 1,1 12,11.5 A1,1 0 1,1 12,13.5 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M15.5,13.5 A1,1 0 1,1 15.5,11.5 A1,1 0 1,1 15.5,13.5 Z" />
+
+    <!-- Fila 2 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M8.5,17.5 A1,1 0 1,1 8.5,15.5 A1,1 0 1,1 8.5,17.5 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,17.5 A1,1 0 1,1 12,15.5 A1,1 0 1,1 12,17.5 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M15.5,17.5 A1,1 0 1,1 15.5,15.5 A1,1 0 1,1 15.5,17.5 Z" />
+</vector>
