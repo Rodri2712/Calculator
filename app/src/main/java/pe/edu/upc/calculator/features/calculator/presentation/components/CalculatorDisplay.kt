@@ -40,6 +40,10 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import pe.edu.upc.calculator.features.calculator.application.FormatExpressionUseCase
 import pe.edu.upc.calculator.features.calculator.presentation.CalculatorUiState
+import pe.edu.upc.calculator.core.designsystems.theme.CursorColor
+import pe.edu.upc.calculator.core.designsystems.theme.ErrorTextColor
+import pe.edu.upc.calculator.core.designsystems.theme.ExpressionOperatorColor
+import pe.edu.upc.calculator.core.designsystems.theme.PreviewTextColor
 
 @Composable
 fun CalculatorDisplay(
@@ -100,7 +104,7 @@ fun CalculatorDisplay(
 
             if (character in listOf('+', '-', '−', '×', '÷', '%')) {
                 addStyle(
-                    style = SpanStyle(color = Color(0xFF2583D8)),
+                    style = SpanStyle(color = ExpressionOperatorColor),
                     start = index,
                     end = index + 1
                 )
@@ -133,7 +137,7 @@ fun CalculatorDisplay(
 
             if (visualEnd > visualStart) {
                 addStyle(
-                    style = SpanStyle(color = Color(0xFFFF5252)),
+                    style = SpanStyle(color = ErrorTextColor),
                     start = visualStart,
                     end = visualEnd
                 )
@@ -333,7 +337,7 @@ fun CalculatorDisplay(
                 }
 
                 drawLine(
-                    color = Color(0xFF55B8FF).copy(alpha = cursorAlpha),
+                    color = CursorColor.copy(alpha = cursorAlpha),
                     start = Offset(cursorRect.left, cursorTop),
                     end = Offset(cursorRect.left, cursorBottom),
                     strokeWidth = 2.5.dp.toPx(),
@@ -368,7 +372,7 @@ fun CalculatorDisplay(
                     formatExpressionUseCase(expression)
                 }.orEmpty(),
                 modifier = Modifier.fillMaxWidth(),
-                color = Color(0xFF666666),
+                color = PreviewTextColor,
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Light,
                 textAlign = TextAlign.End,
