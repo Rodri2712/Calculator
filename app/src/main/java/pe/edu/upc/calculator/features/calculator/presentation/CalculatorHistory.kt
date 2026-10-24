@@ -36,7 +36,7 @@ import pe.edu.upc.calculator.features.calculator.application.FormatExpressionUse
 import pe.edu.upc.calculator.features.calculator.domain.HistoryItem
 import pe.edu.upc.calculator.core.designsystems.theme.GreenAccent
 import pe.edu.upc.calculator.core.designsystems.theme.CalculatorBackground
-import pe.edu.upc.calculator.core.designsystems.theme.HistoryButtonColor
+import pe.edu.upc.calculator.core.designsystems.theme.NumberButtonColor
 import pe.edu.upc.calculator.core.designsystems.theme.HistoryDividerColor
 import pe.edu.upc.calculator.core.designsystems.theme.SecondaryTextColor
 
@@ -156,7 +156,7 @@ fun CalculatorHistory(
                 onClick = onClearHistory,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
-                color = HistoryButtonColor
+                color = NumberButtonColor
             ) {
                 Text(
                     text = stringResource(R.string.history_clear),
