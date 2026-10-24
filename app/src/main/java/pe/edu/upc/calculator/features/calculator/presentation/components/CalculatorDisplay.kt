@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -142,6 +143,10 @@ fun CalculatorDisplay(
 
     val showingResult = state.isResultDisplayed
 
+    val emptyCursorHeight = with(LocalDensity.current) {
+        76.sp.toPx()
+    }
+
     val hasOperation =
         display.any { it == '+' || it == '×' || it == '÷' } ||
                 display.drop(1).any { it == '-' || it == '−' }
@@ -183,6 +188,12 @@ fun CalculatorDisplay(
         ),
         label = "display_font_size"
     )
+
+    val displayFontSize = if (display.isEmpty() && !showingResult) {
+        76f
+    } else {
+        animatedFontSize
+    }
 
     var textLayoutResult by remember {
         mutableStateOf<TextLayoutResult?>(null)
@@ -235,7 +246,7 @@ fun CalculatorDisplay(
                     }
                 },
             color = Color.White,
-            fontSize = animatedFontSize.sp,
+            fontSize = displayFontSize.sp,
             fontWeight = FontWeight.Light,
             textAlign = TextAlign.End,
             maxLines = Int.MAX_VALUE,
@@ -307,13 +318,24 @@ fun CalculatorDisplay(
         ) {
             val layout = textLayoutResult
 
-            if (layout != null && !showingResult && display.isNotEmpty()) {
+            if (layout != null && !showingResult) {
                 val cursorRect = layout.getCursorRect(cursorPosition)
+
+                val cursorTop: Float
+                val cursorBottom: Float
+
+                if (display.isEmpty()) {
+                    cursorTop = (size.height - emptyCursorHeight) / 2f
+                    cursorBottom = cursorTop + emptyCursorHeight
+                } else {
+                    cursorTop = cursorRect.top
+                    cursorBottom = cursorRect.bottom
+                }
 
                 drawLine(
                     color = Color(0xFF55B8FF).copy(alpha = cursorAlpha),
-                    start = Offset(cursorRect.left, cursorRect.top),
-                    end = Offset(cursorRect.left, cursorRect.bottom),
+                    start = Offset(cursorRect.left, cursorTop),
+                    end = Offset(cursorRect.left, cursorBottom),
                     strokeWidth = 2.5.dp.toPx(),
                     cap = StrokeCap.Round
                 )
