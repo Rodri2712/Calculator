@@ -227,17 +227,18 @@ class CalculatorViewModel @Inject constructor(
     }
 
     fun selectHistoryItem(item: HistoryItem) {
-        justCalculated = true
+        justCalculated = false
 
         _state.update {
             it.copy(
-                display = item.result,
-                cursorPosition = item.result.length,
+                display = item.operation,
+                cursorPosition = item.operation.length,
                 isHistoryVisible = false,
-                isResultDisplayed = true,
+                isResultDisplayed = false,
                 error = null,
                 errorStartIndex = null,
-                errorEndIndex = null
+                errorEndIndex = null,
+                historySelectionId = it.historySelectionId + 1
             )
         }
     }
