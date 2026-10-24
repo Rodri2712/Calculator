@@ -187,7 +187,7 @@ fun CalculatorDisplay(
     val animatedFontSize by animateFloatAsState(
         targetValue = targetFontSize.value,
         animationSpec = tween(
-            durationMillis = 180,
+            durationMillis = 400,
             easing = LinearOutSlowInEasing
         ),
         label = "display_font_size"
