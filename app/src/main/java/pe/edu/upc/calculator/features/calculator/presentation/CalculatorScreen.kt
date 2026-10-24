@@ -169,29 +169,29 @@ fun CalculatorScreen(
                     if (targetState) {
                         slideInHorizontally(
                             animationSpec = tween(
-                                durationMillis = 320,
+                                durationMillis = 220,
                                 easing = FastOutSlowInEasing
                             ),
                             initialOffsetX = { fullWidth -> -fullWidth }
                         ) + fadeIn(
                             animationSpec = tween(
-                                durationMillis = 240,
-                                delayMillis = 30
+                                durationMillis = 180,
+                                easing = FastOutSlowInEasing
                             )
                         ) togetherWith fadeOut(
-                            animationSpec = tween(durationMillis = 160)
+                            animationSpec = tween(durationMillis = 120)
                         )
                     } else {
                         fadeIn(
                             animationSpec = tween(durationMillis = 1)
                         ) togetherWith slideOutHorizontally(
                             animationSpec = tween(
-                                durationMillis = 280,
+                                durationMillis = 180,
                                 easing = FastOutLinearInEasing
                             ),
                             targetOffsetX = { fullWidth -> -fullWidth }
                         ) + fadeOut(
-                            animationSpec = tween(durationMillis = 220)
+                            animationSpec = tween(durationMillis = 150)
                         )
                     }
                 },
