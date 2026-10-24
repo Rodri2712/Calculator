@@ -68,11 +68,15 @@ class CalculatorViewModel @Inject constructor(
                 justCalculated = justCalculated
             )
 
-            val exceedsDigitLimit = Regex("""\d+(?:\.\d*)?|\.\d+""")
+            val numberAtCursor = Regex("""\d+(?:\.\d*)?|\.\d+""")
                 .findAll(result.display)
-                .any { number ->
-                    number.value.count { it.isDigit() } > 15
+                .firstOrNull { number ->
+                    result.cursorPosition > number.range.first &&
+                            result.cursorPosition <= number.range.last + 1
                 }
+
+            val exceedsDigitLimit =
+                (numberAtCursor?.value?.count { it.isDigit() } ?: 0) > 15
 
             if (exceedsDigitLimit) {
                 return@update current.copy(
