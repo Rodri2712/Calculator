@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -31,6 +32,7 @@ import pe.edu.upc.calculator.R
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.BoxWithConstraints
+import pe.edu.upc.calculator.features.calculator.application.FormatExpressionUseCase
 import pe.edu.upc.calculator.features.calculator.domain.HistoryItem
 import pe.edu.upc.calculator.core.designsystems.theme.GreenAccent
 import pe.edu.upc.calculator.core.designsystems.theme.CalculatorBackground
@@ -45,6 +47,10 @@ fun CalculatorHistory(
     onHistoryItemClick: (HistoryItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val formatExpression = remember {
+        FormatExpressionUseCase()
+    }
+
     BoxWithConstraints(
         modifier = modifier.fillMaxSize()
     ) {
@@ -97,7 +103,7 @@ fun CalculatorHistory(
                             horizontalAlignment = Alignment.Start
                         ) {
                             Text(
-                                text = item.operation,
+                                text = formatExpression(item.operation),
                                 modifier = Modifier.fillMaxWidth(),
                                 color = SecondaryTextColor,
                                 fontSize = 18.sp,
@@ -110,7 +116,7 @@ fun CalculatorHistory(
                             Spacer(modifier = Modifier.height(5.dp))
 
                             Text(
-                                text = "= ${item.result}",
+                                text = "= ${formatExpression(item.result)}",
                                 modifier = Modifier.fillMaxWidth(),
                                 color = GreenAccent,
                                 fontSize = 19.sp,
