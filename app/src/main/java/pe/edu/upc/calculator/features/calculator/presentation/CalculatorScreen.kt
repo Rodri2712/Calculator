@@ -44,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import pe.edu.upc.calculator.R
 import pe.edu.upc.calculator.features.calculator.domain.ExpressionError
 import pe.edu.upc.calculator.core.designsystems.theme.CalculatorBackground
+import pe.edu.upc.calculator.core.designsystems.theme.SecondaryOverlayColor
 import pe.edu.upc.calculator.features.calculator.domain.HistoryItem
 import pe.edu.upc.calculator.features.calculator.presentation.components.CalculatorDisplay
 import pe.edu.upc.calculator.features.calculator.presentation.components.CalculatorKeypad
@@ -222,7 +223,7 @@ fun CalculatorScreen(
                 modifier = Modifier
                     .widthIn(max = 340.dp)
                     .background(
-                        color = Color(0xCC555555),
+                        color = SecondaryOverlayColor,
                         shape = CircleShape
                     )
                     .padding(
