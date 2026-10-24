@@ -1,5 +1,9 @@
 package pe.edu.upc.calculator.features.calculator.domain
 
+import java.math.BigDecimal
+import java.math.MathContext
+import java.math.RoundingMode
+
 enum class ExpressionError {
     EMPTY_EXPRESSION,
     INCOMPLETE_EXPRESSION,
@@ -30,11 +34,11 @@ class ExpressionParser(expression: String) {
     private var position = 0
 
     private data class ParsedValue(
-        val value: Double,
+        val value: BigDecimal,
         val isPercent: Boolean = false
     )
 
-    fun parse(): Double {
+    fun parse(): BigDecimal {
         if (input.isBlank()) {
             throw ExpressionParseException(
                 ExpressionError.EMPTY_EXPRESSION
@@ -59,14 +63,6 @@ class ExpressionParser(expression: String) {
             )
         }
 
-        if (!result.value.isFinite()) {
-            throw ExpressionParseException(
-                ExpressionError.INVALID_RESULT,
-                startIndex = 0,
-                endIndex = input.length
-            )
-        }
-
         return result.value
     }
 
@@ -81,9 +77,11 @@ class ExpressionParser(expression: String) {
 
                     left = ParsedValue(
                         value = if (right.isPercent) {
-                            left.value + left.value * right.value
+                            left.value.add(
+                                left.value.multiply(right.value)
+                            )
                         } else {
-                            left.value + right.value
+                            left.value.add(right.value)
                         }
                     )
                 }
@@ -94,9 +92,11 @@ class ExpressionParser(expression: String) {
 
                     left = ParsedValue(
                         value = if (right.isPercent) {
-                            left.value - left.value * right.value
+                            left.value.subtract(
+                                left.value.multiply(right.value)
+                            )
                         } else {
-                            left.value - right.value
+                            left.value.subtract(right.value)
                         }
                     )
                 }
@@ -117,7 +117,9 @@ class ExpressionParser(expression: String) {
                     position++
                     val right = parseUnary()
 
-                    left = ParsedValue(left.value * right.value)
+                    left = ParsedValue(
+                        left.value.multiply(right.value)
+                    )
                 }
 
                 '/' -> {
@@ -126,7 +128,7 @@ class ExpressionParser(expression: String) {
 
                     val right = parseUnary()
 
-                    if (right.value == 0.0) {
+                    if (right.value.compareTo(BigDecimal.ZERO) == 0) {
                         throw ExpressionParseException(
                             ExpressionError.DIVISION_BY_ZERO,
                             startIndex = operatorPosition,
@@ -134,12 +136,20 @@ class ExpressionParser(expression: String) {
                         )
                     }
 
-                    left = ParsedValue(left.value / right.value)
+                    left = ParsedValue(
+                        left.value.divide(
+                            right.value,
+                            DIVISION_CONTEXT
+                        )
+                    )
                 }
 
                 '(' -> {
                     val right = parseUnary()
-                    left = ParsedValue(left.value * right.value)
+
+                    left = ParsedValue(
+                        left.value.multiply(right.value)
+                    )
                 }
 
                 else -> return left
@@ -157,7 +167,7 @@ class ExpressionParser(expression: String) {
                 val value = parseUnary()
 
                 ParsedValue(
-                    value = -value.value,
+                    value = value.value.negate(),
                     isPercent = value.isPercent
                 )
             }
@@ -171,7 +181,7 @@ class ExpressionParser(expression: String) {
 
         if (consume('%')) {
             result = ParsedValue(
-                value = result.value / 100.0,
+                value = result.value.divide(ONE_HUNDRED),
                 isPercent = true
             )
 
@@ -246,7 +256,15 @@ class ExpressionParser(expression: String) {
             )
         }
 
-        return ParsedValue(number.toDouble())
+        return try {
+            ParsedValue(BigDecimal(number))
+        } catch (_: NumberFormatException) {
+            throw ExpressionParseException(
+                ExpressionError.INVALID_NUMBER,
+                startIndex = start,
+                endIndex = position
+            )
+        }
     }
 
     private fun consume(char: Char): Boolean {
@@ -259,5 +277,14 @@ class ExpressionParser(expression: String) {
         }
 
         return false
+    }
+
+    private companion object {
+        val ONE_HUNDRED = BigDecimal("100")
+
+        val DIVISION_CONTEXT = MathContext(
+            16,
+            RoundingMode.HALF_EVEN
+        )
     }
 }
