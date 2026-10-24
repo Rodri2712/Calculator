@@ -38,6 +38,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.animation.core.Animatable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import pe.edu.upc.calculator.features.calculator.application.FormatExpressionUseCase
 import pe.edu.upc.calculator.features.calculator.presentation.CalculatorUiState
 import pe.edu.upc.calculator.core.designsystems.theme.CursorColor
@@ -147,7 +153,46 @@ fun CalculatorDisplay(
 
     val showingResult = state.isResultDisplayed
 
-    val emptyCursorHeight = with(LocalDensity.current) {
+    val density = LocalDensity.current
+
+    val historyScale = remember(state.historySelectionId) {
+        Animatable(
+            if (state.historySelectionId > 0) 0.88f else 1f
+        )
+    }
+
+    val historyOffsetX = remember(state.historySelectionId) {
+        Animatable(0f)
+    }
+
+    LaunchedEffect(state.historySelectionId) {
+        if (state.historySelectionId > 0) {
+            coroutineScope {
+                launch {
+                    historyScale.animateTo(
+                        targetValue = 1f,
+                        animationSpec = tween(
+                            durationMillis = 420,
+                            easing = LinearOutSlowInEasing
+                        )
+                    )
+                }
+
+                historyOffsetX.animateTo(
+                    targetValue = 0f,
+                    animationSpec = tween(
+                        durationMillis = 420,
+                        easing = LinearOutSlowInEasing
+                    )
+                )
+            }
+        }
+    }
+
+    val isHistoryAnimating =
+        historyScale.value < 0.999f || historyOffsetX.value > 0.1f
+
+    val emptyCursorHeight = with(density) {
         76.sp.toPx()
     }
 
@@ -193,10 +238,10 @@ fun CalculatorDisplay(
         label = "display_font_size"
     )
 
-    val displayFontSize = if (display.isEmpty() && !showingResult) {
-        76f
-    } else {
-        animatedFontSize
+    val displayFontSize = when {
+        display.isEmpty() && !showingResult -> 76f
+        isHistoryAnimating -> targetFontSize.value
+        else -> animatedFontSize
     }
 
     var textLayoutResult by remember {
@@ -226,7 +271,17 @@ fun CalculatorDisplay(
     )
 
     Box(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = historyScale.value
+                scaleY = historyScale.value
+
+                transformOrigin = TransformOrigin(
+                    pivotFractionX = 1f,
+                    pivotFractionY = 0.5f
+                )
+            },
         contentAlignment = Alignment.CenterEnd
     ) {
         Text(
