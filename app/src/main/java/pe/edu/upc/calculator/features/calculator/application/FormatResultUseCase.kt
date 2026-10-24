@@ -5,9 +5,8 @@ import javax.inject.Inject
 
 class FormatResultUseCase @Inject constructor() {
 
-    operator fun invoke(value: Double): String {
-        val number = BigDecimal.valueOf(value)
-            .stripTrailingZeros()
+    operator fun invoke(value: BigDecimal): String {
+        val number = value.stripTrailingZeros()
 
         if (number.compareTo(BigDecimal.ZERO) == 0) {
             return "0"
@@ -16,29 +15,9 @@ class FormatResultUseCase @Inject constructor() {
         val exponent = number.precision() - number.scale() - 1
 
         return if (
-            exponent in SCIENTIFIC_NOTATION_THRESHOLD..Int.MAX_VALUE ||
-            exponent in Int.MIN_VALUE..SMALL_NUMBER_EXPONENT_THRESHOLD
+            exponent !in SMALL_NUMBER_EXPONENT_THRESHOLD + 1 until SCIENTIFIC_NOTATION_THRESHOLD
         ) {
-            number.toString()
-                .replace("E", "e")
-                .let { scientific ->
-                    if ("e" in scientific) {
-                        val exponentIndex = scientific.indexOf('e')
-                        val exponentPart = scientific.substring(exponentIndex + 1)
-
-                        if (
-                            exponentPart.startsWith("-") ||
-                            exponentPart.startsWith("+")
-                        ) {
-                            scientific
-                        } else {
-                            scientific.substring(0, exponentIndex) +
-                                    "e+" + exponentPart
-                        }
-                    } else {
-                        scientific
-                    }
-                }
+            number.toString().replace("E", "e")
         } else {
             number.toPlainString()
         }
