@@ -12,5 +12,6 @@ data class CalculatorUiState(
     val error: ExpressionError? = null,
     val errorToastId: Int = 0,
     val errorStartIndex: Int? = null,
-    val errorEndIndex: Int? = null
+    val errorEndIndex: Int? = null,
+    val historySelectionId: Int = 0
 )
