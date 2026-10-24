@@ -216,10 +216,14 @@ class ExpressionParser(expression: String) {
 
         val start = position
         var decimalFound = false
+        var digitsFound = 0
 
         while (position < input.length) {
             when (input[position]) {
-                in '0'..'9' -> position++
+                in '0'..'9' -> {
+                    digitsFound++
+                    position++
+                }
 
                 '.' -> {
                     if (decimalFound) {
@@ -238,23 +242,47 @@ class ExpressionParser(expression: String) {
             }
         }
 
-        if (start >= position) {
+        if (digitsFound == 0) {
             throw ExpressionParseException(
-                ExpressionError.EXPECTED_NUMBER,
-                startIndex = position,
+                if (decimalFound) {
+                    ExpressionError.INVALID_DECIMAL
+                } else {
+                    ExpressionError.EXPECTED_NUMBER
+                },
+                startIndex = start,
                 endIndex = (position + 1).coerceAtMost(input.length)
             )
         }
 
-        val number = input.substring(start, position)
+        if (position < input.length &&
+            (input[position] == 'e' || input[position] == 'E')
+        ) {
+            position++
 
-        if (number == ".") {
-            throw ExpressionParseException(
-                ExpressionError.INVALID_DECIMAL,
-                startIndex = start,
-                endIndex = position
-            )
+            if (position < input.length &&
+                (input[position] == '+' || input[position] == '-')
+            ) {
+                position++
+            }
+
+            val exponentStart = position
+
+            while (position < input.length &&
+                input[position] in '0'..'9'
+            ) {
+                position++
+            }
+
+            if (position == exponentStart) {
+                throw ExpressionParseException(
+                    ExpressionError.INVALID_NUMBER,
+                    startIndex = start,
+                    endIndex = position
+                )
+            }
         }
+
+        val number = input.substring(start, position)
 
         return try {
             ParsedValue(BigDecimal(number))
