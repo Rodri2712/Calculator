@@ -16,8 +16,11 @@ val OperatorButtonColor = Color(0xFFB5B5B5)
 val EqualsButtonColor = Color(0xFF2583D8)
 val GreenAccent = Color(0xFF55B8FF)
 val DividerColor = Color(0xFF17334A)
-
-val HistoryBackground = Color(0xFF081522)
 val HistoryButtonColor = Color(0xFF10283D)
 val HistoryDividerColor = Color(0xFF1D3A52)
 val SecondaryTextColor = Color(0xFF8FAFC8)
+val ExpressionOperatorColor = EqualsButtonColor
+val ErrorTextColor = Color(0xFFFF5252)
+val CursorColor = GreenAccent
+val PreviewTextColor = Color(0xFF666666)
+val SecondaryOverlayColor = Color(0xCC555555)
