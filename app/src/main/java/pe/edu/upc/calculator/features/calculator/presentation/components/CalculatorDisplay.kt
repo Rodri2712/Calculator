@@ -219,6 +219,7 @@ fun CalculatorDisplay(
         showingResult && formattedDisplay.length > 15 -> 34.sp
         showingResult && formattedDisplay.length > 12 -> 42.sp
         showingResult && formattedDisplay.length > 10 -> 52.sp
+        showingResult && formattedDisplay.length > 8 -> 52.sp
         showingResult -> 84.sp
 
         formattedDisplay.length > 30 -> 16.sp
