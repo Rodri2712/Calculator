@@ -1,5 +1,6 @@
 package pe.edu.upc.calculator
 
+import java.math.BigDecimal
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -9,27 +10,32 @@ class ExampleUnitTest {
 
     @Test
     fun additionIsCorrect() {
-        assertEquals(4.0, ExpressionParser("2+2").parse(), 0.000001)
+        assertDecimalEquals("4", "2+2")
     }
 
     @Test
     fun implicitMultiplicationWithParenthesesWorks() {
-        assertEquals(6.0, ExpressionParser("2(3)").parse(), 0.000001)
+        assertDecimalEquals("6", "2(3)")
     }
 
     @Test
     fun parenthesesAndOperatorPrecedenceWork() {
-        assertEquals(20.0, ExpressionParser("(2+3)*4").parse(), 0.000001)
+        assertDecimalEquals("20", "(2+3)*4")
     }
 
     @Test
     fun percentageMultiplicationWorks() {
-        assertEquals(100.0, ExpressionParser("200*50%").parse(), 0.000001)
+        assertDecimalEquals("100", "200*50%")
     }
 
     @Test
     fun percentageAdditionWorks() {
-        assertEquals(220.0, ExpressionParser("200+10%").parse(), 0.000001)
+        assertDecimalEquals("220", "200+10%")
+    }
+
+    @Test
+    fun decimalAdditionHasNoFloatingPointError() {
+        assertDecimalEquals("0.3", "0.1+0.2")
     }
 
     @Test
@@ -51,5 +57,15 @@ class ExampleUnitTest {
         assertThrows(IllegalArgumentException::class.java) {
             ExpressionParser("50%%").parse()
         }
+    }
+
+    private fun assertDecimalEquals(expected: String, expression: String) {
+        val actual = ExpressionParser(expression).parse()
+
+        assertEquals(
+            "Resultado incorrecto para: $expression",
+            0,
+            BigDecimal(expected).compareTo(actual)
+        )
     }
 }
