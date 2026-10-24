@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import pe.edu.upc.calculator.features.calculator.application.FormatExpressionUseCase
 import pe.edu.upc.calculator.features.calculator.presentation.CalculatorUiState
 
 @Composable
@@ -48,10 +49,54 @@ fun CalculatorDisplay(
 ) {
     val display = state.display
 
-    val displayText = buildAnnotatedString {
-        append(display)
+    val formatExpressionUseCase = remember {
+        FormatExpressionUseCase()
+    }
 
-        display.forEachIndexed { index, character ->
+    val formattedDisplay = formatExpressionUseCase(display)
+
+    val lineBreakPositions = if (formattedDisplay.length > 24) {
+        formattedDisplay.indices.filter { index ->
+            index > 0 &&
+                    formattedDisplay[index] in listOf('+', '-', '−', '×', '÷') &&
+                    (
+                            formattedDisplay[index - 1].isDigit() ||
+                                    formattedDisplay[index - 1] == ')' ||
+                                    formattedDisplay[index - 1] == '%'
+                            )
+        }
+    } else {
+        emptyList()
+    }
+
+    val visualDisplay = buildString {
+        formattedDisplay.forEachIndexed { index, character ->
+            if (index in lineBreakPositions) {
+                append('\n')
+            }
+            append(character)
+        }
+    }
+
+    fun toVisualPosition(position: Int): Int {
+        val safePosition = position.coerceIn(0, formattedDisplay.length)
+
+        return safePosition + lineBreakPositions.count { it <= safePosition }
+    }
+
+    fun toFormattedPosition(position: Int): Int {
+        val safePosition = position.coerceIn(0, visualDisplay.length)
+
+        return visualDisplay
+            .take(safePosition)
+            .count { it != '\n' }
+            .coerceIn(0, formattedDisplay.length)
+    }
+
+    val displayText = buildAnnotatedString {
+        visualDisplay.forEachIndexed { index, character ->
+            append(character)
+
             if (character in listOf('+', '-', '−', '×', '÷', '%')) {
                 addStyle(
                     style = SpanStyle(color = Color(0xFF2583D8)),
@@ -72,11 +117,26 @@ fun CalculatorDisplay(
             end > start &&
             end <= display.length
         ) {
-            addStyle(
-                style = SpanStyle(color = Color(0xFFFF5252)),
-                start = start,
-                end = end
+            val formattedStart = formatExpressionUseCase.formattedPosition(
+                expression = display,
+                rawPosition = start
             )
+
+            val formattedEnd = formatExpressionUseCase.formattedPosition(
+                expression = display,
+                rawPosition = end
+            )
+
+            val visualStart = toVisualPosition(formattedStart)
+            val visualEnd = toVisualPosition(formattedEnd)
+
+            if (visualEnd > visualStart) {
+                addStyle(
+                    style = SpanStyle(color = Color(0xFFFF5252)),
+                    start = visualStart,
+                    end = visualEnd
+                )
+            }
         }
     }
 
@@ -98,18 +158,20 @@ fun CalculatorDisplay(
     }
 
     val targetFontSize = when {
-        showingResult && display.length > 30 -> 18.sp
-        showingResult && display.length > 24 -> 22.sp
-        showingResult && display.length > 19 -> 28.sp
-        showingResult && display.length > 14 -> 38.sp
-        showingResult && display.length > 10 -> 52.sp
+        showingResult && formattedDisplay.length > 30 -> 16.sp
+        showingResult && formattedDisplay.length > 26 -> 18.sp
+        showingResult && formattedDisplay.length > 22 -> 22.sp
+        showingResult && formattedDisplay.length > 18 -> 28.sp
+        showingResult && formattedDisplay.length > 15 -> 34.sp
+        showingResult && formattedDisplay.length > 12 -> 42.sp
+        showingResult && formattedDisplay.length > 10 -> 52.sp
         showingResult -> 84.sp
 
-        display.length > 30 -> 16.sp
-        display.length > 24 -> 20.sp
-        display.length > 19 -> 26.sp
-        display.length > 14 -> 34.sp
-        display.length > 10 -> 46.sp
+        formattedDisplay.length > 30 -> 16.sp
+        formattedDisplay.length > 24 -> 20.sp
+        formattedDisplay.length > 19 -> 26.sp
+        formattedDisplay.length > 14 -> 34.sp
+        formattedDisplay.length > 10 -> 46.sp
         else -> 76.sp
     }
 
@@ -126,7 +188,13 @@ fun CalculatorDisplay(
         mutableStateOf<TextLayoutResult?>(null)
     }
 
-    val cursorPosition = state.cursorPosition.coerceIn(0, display.length)
+    val formattedCursorPosition = formatExpressionUseCase.formattedPosition(
+        expression = display,
+        rawPosition = state.cursorPosition
+    ).coerceIn(0, formattedDisplay.length)
+
+    val cursorPosition = toVisualPosition(formattedCursorPosition)
+        .coerceIn(0, visualDisplay.length)
 
     val cursorTransition = rememberInfiniteTransition(
         label = "calculator_cursor"
@@ -155,9 +223,14 @@ fun CalculatorDisplay(
                         textLayoutResult?.let { layout ->
                             val position = layout
                                 .getOffsetForPosition(tapOffset)
-                                .coerceIn(0, display.length)
+                                .coerceIn(0, visualDisplay.length)
 
-                            onCursorPositionChange(position)
+                            onCursorPositionChange(
+                                formatExpressionUseCase.rawPosition(
+                                    expression = display,
+                                    formattedPosition = toFormattedPosition(position)
+                                )
+                            )
                         }
                     }
                 },
@@ -165,8 +238,8 @@ fun CalculatorDisplay(
             fontSize = animatedFontSize.sp,
             fontWeight = FontWeight.Light,
             textAlign = TextAlign.End,
-            maxLines = 1,
-            softWrap = false,
+            maxLines = Int.MAX_VALUE,
+            softWrap = true,
             overflow = TextOverflow.Clip,
             onTextLayout = { layout ->
                 textLayoutResult = layout
@@ -183,9 +256,14 @@ fun CalculatorDisplay(
                         if (layout != null && !showingResult) {
                             val position = layout
                                 .getOffsetForPosition(offset)
-                                .coerceIn(0, display.length)
+                                .coerceIn(0, visualDisplay.length)
 
-                            onCursorPositionChange(position)
+                            onCursorPositionChange(
+                                formatExpressionUseCase.rawPosition(
+                                    expression = display,
+                                    formattedPosition = toFormattedPosition(position)
+                                )
+                            )
                         }
                     }
                 }
@@ -197,9 +275,14 @@ fun CalculatorDisplay(
                             if (layout != null && !showingResult) {
                                 val position = layout
                                     .getOffsetForPosition(offset)
-                                    .coerceIn(0, display.length)
+                                    .coerceIn(0, visualDisplay.length)
 
-                                onCursorPositionChange(position)
+                                onCursorPositionChange(
+                                    formatExpressionUseCase.rawPosition(
+                                        expression = display,
+                                        formattedPosition = toFormattedPosition(position)
+                                    )
+                                )
                             }
                         },
                         onDrag = { change, _ ->
@@ -208,9 +291,14 @@ fun CalculatorDisplay(
                             if (layout != null && !showingResult) {
                                 val position = layout
                                     .getOffsetForPosition(change.position)
-                                    .coerceIn(0, display.length)
+                                    .coerceIn(0, visualDisplay.length)
 
-                                onCursorPositionChange(position)
+                                onCursorPositionChange(
+                                    formatExpressionUseCase.rawPosition(
+                                        expression = display,
+                                        formattedPosition = toFormattedPosition(position)
+                                    )
+                                )
                                 change.consume()
                             }
                         }
@@ -254,15 +342,17 @@ fun CalculatorDisplay(
             )
         ) {
             Text(
-                text = preview.orEmpty(),
+                text = preview?.let { expression ->
+                    formatExpressionUseCase(expression)
+                }.orEmpty(),
                 modifier = Modifier.fillMaxWidth(),
                 color = Color(0xFF666666),
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Light,
                 textAlign = TextAlign.End,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Clip
+                maxLines = Int.MAX_VALUE,
+                softWrap = true,
+                overflow = TextOverflow.Clip,
             )
         }
     }
