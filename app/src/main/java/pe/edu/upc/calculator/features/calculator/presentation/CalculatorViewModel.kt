@@ -68,7 +68,13 @@ class CalculatorViewModel @Inject constructor(
                 justCalculated = justCalculated
             )
 
-            if (result.display.count { it.isDigit() } > 15) {
+            val exceedsDigitLimit = Regex("""\d+(?:\.\d*)?|\.\d+""")
+                .findAll(result.display)
+                .any { number ->
+                    number.value.count { it.isDigit() } > 15
+                }
+
+            if (exceedsDigitLimit) {
                 return@update current.copy(
                     error = ExpressionError.DIGIT_LIMIT,
                     errorToastId = current.errorToastId + 1
