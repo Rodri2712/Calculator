@@ -230,19 +230,23 @@ fun CalculatorDisplay(
         else -> 76.sp
     }
 
-    val animatedFontSize by animateFloatAsState(
-        targetValue = targetFontSize.value,
-        animationSpec = tween(
-            durationMillis = 400,
-            easing = LinearOutSlowInEasing
-        ),
-        label = "display_font_size"
-    )
+    val displayFontSize = targetFontSize.value
 
-    val displayFontSize = when {
-        display.isEmpty() && !showingResult -> 76f
-        isHistoryAnimating -> targetFontSize.value
-        else -> animatedFontSize
+    val animatedVisualFontSize = remember {
+        Animatable(displayFontSize)
+    }
+
+    LaunchedEffect(displayFontSize) {
+        val isShrinking =
+            displayFontSize < animatedVisualFontSize.value
+
+        animatedVisualFontSize.animateTo(
+            targetValue = displayFontSize,
+            animationSpec = tween(
+                durationMillis = if (isShrinking) 180 else 260,
+                easing = androidx.compose.animation.core.FastOutSlowInEasing
+            )
+        )
     }
 
     var textLayoutResult by remember {
@@ -275,8 +279,10 @@ fun CalculatorDisplay(
         modifier = modifier
             .fillMaxWidth()
             .graphicsLayer {
-                scaleX = historyScale.value
-                scaleY = historyScale.value
+                val fontScale = animatedVisualFontSize.value / displayFontSize
+
+                scaleX = historyScale.value * fontScale
+                scaleY = historyScale.value * fontScale
 
                 transformOrigin = TransformOrigin(
                     pivotFractionX = 1f,
