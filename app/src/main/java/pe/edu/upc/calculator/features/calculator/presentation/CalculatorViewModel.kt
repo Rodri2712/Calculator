@@ -7,33 +7,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import pe.edu.upc.calculator.features.calculator.application.AddHistoryItemUseCase
-import pe.edu.upc.calculator.features.calculator.application.ResolveExpressionErrorUseCase
-import pe.edu.upc.calculator.features.calculator.application.EvaluateExpressionUseCase
-import pe.edu.upc.calculator.features.calculator.application.ClearExpressionUseCase
-import pe.edu.upc.calculator.features.calculator.application.BackspaceExpressionUseCase
-import pe.edu.upc.calculator.features.calculator.application.EditOperatorUseCase
-import pe.edu.upc.calculator.features.calculator.application.EditExpressionUseCase
 import pe.edu.upc.calculator.features.calculator.application.PreviewExpressionUseCase
-import pe.edu.upc.calculator.features.calculator.application.ClearHistoryUseCase
 import pe.edu.upc.calculator.features.calculator.application.GetHistoryUseCase
-import pe.edu.upc.calculator.features.calculator.application.SaveHistoryUseCase
 import pe.edu.upc.calculator.features.calculator.domain.HistoryItem
 import pe.edu.upc.calculator.features.calculator.domain.ExpressionError
 
 @HiltViewModel
 class CalculatorViewModel @Inject constructor(
-    private val evaluateExpression: EvaluateExpressionUseCase,
-    private val addHistoryItem: AddHistoryItemUseCase,
-    private val resolveExpressionError: ResolveExpressionErrorUseCase,
+    private val resultHandler: CalculatorResultHandler,
+    private val historyHandler: CalculatorHistoryHandler,
     getHistory: GetHistoryUseCase,
-    private val saveHistory: SaveHistoryUseCase,
-    private val clearHistoryUseCase: ClearHistoryUseCase,
     private val previewExpression: PreviewExpressionUseCase,
-    private val editExpression: EditExpressionUseCase,
-    private val editOperator: EditOperatorUseCase,
-    private val backspaceExpression: BackspaceExpressionUseCase,
-    private val clearExpression: ClearExpressionUseCase,
+    private val digitHandler: CalculatorDigitHandler,
+    private val operatorHandler: CalculatorOperatorHandler,
+    private val editingHandler: CalculatorEditingHandler,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
@@ -61,24 +48,14 @@ class CalculatorViewModel @Inject constructor(
 
     fun onDigitClick(value: String) {
         _state.update { current ->
-            val result = editExpression(
+            val result = digitHandler.handle(
                 currentDisplay = current.display,
                 currentCursorPosition = current.cursorPosition,
                 value = value,
                 justCalculated = justCalculated
             )
 
-            val numberAtCursor = Regex("""\d+(?:\.\d*)?|\.\d+""")
-                .findAll(result.display)
-                .firstOrNull { number ->
-                    result.cursorPosition > number.range.first &&
-                            result.cursorPosition <= number.range.last + 1
-                }
-
-            val exceedsDigitLimit =
-                (numberAtCursor?.value?.count { it.isDigit() } ?: 0) > 15
-
-            if (exceedsDigitLimit) {
+            if (result.exceedsDigitLimit) {
                 return@update current.copy(
                     error = ExpressionError.DIGIT_LIMIT,
                     errorToastId = current.errorToastId + 1
@@ -102,7 +79,7 @@ class CalculatorViewModel @Inject constructor(
         var operatorHandled = false
 
         _state.update { current ->
-            val result = editOperator(
+            val result = operatorHandler.handle(
                 currentDisplay = current.display,
                 currentCursorPosition = current.cursorPosition,
                 operator = operator
@@ -132,7 +109,7 @@ class CalculatorViewModel @Inject constructor(
         justCalculated = false
 
         _state.update { current ->
-            val result = clearExpression()
+            val result = editingHandler.clear()
 
             current.copy(
                 display = result.display,
@@ -149,7 +126,7 @@ class CalculatorViewModel @Inject constructor(
         justCalculated = false
 
         _state.update { current ->
-            val result = backspaceExpression(
+            val result = editingHandler.backspace(
                 currentDisplay = current.display,
                 currentCursorPosition = current.cursorPosition
             )
@@ -169,15 +146,16 @@ class CalculatorViewModel @Inject constructor(
         if (justCalculated) return
 
         val expression = _state.value.display
+        val result = resultHandler.calculate(expression)
 
-        try {
-            val formattedResult = evaluateExpression(expression)
+        if (result.formattedResult != null) {
+            val formattedResult = result.formattedResult
 
             _state.update { current ->
                 current.copy(
                     display = formattedResult,
                     cursorPosition = formattedResult.length,
-                    history = addHistoryItem(
+                    history = historyHandler.addItem(
                         operation = expression,
                         result = formattedResult,
                         currentHistory = current.history
@@ -189,14 +167,9 @@ class CalculatorViewModel @Inject constructor(
                 )
             }
 
-            saveHistory(_state.value.history)
+            historyHandler.save(_state.value.history)
             justCalculated = true
-        } catch (exception: Exception) {
-            val resolvedError = resolveExpressionError(
-                expression = expression,
-                exception = exception
-            )
-
+        } else {
             _state.update { current ->
                 current.copy(
                     display = expression,
@@ -205,10 +178,10 @@ class CalculatorViewModel @Inject constructor(
                         expression.length
                     ),
                     isResultDisplayed = false,
-                    error = resolvedError.error,
+                    error = result.error,
                     errorToastId = current.errorToastId + 1,
-                    errorStartIndex = resolvedError.startIndex,
-                    errorEndIndex = resolvedError.endIndex
+                    errorStartIndex = result.errorStartIndex,
+                    errorEndIndex = result.errorEndIndex
                 )
             }
 
@@ -223,7 +196,7 @@ class CalculatorViewModel @Inject constructor(
     }
 
     fun clearHistory() {
-        clearHistoryUseCase()
+        historyHandler.clear()
 
         _state.update { current ->
             current.copy(history = emptyList())
