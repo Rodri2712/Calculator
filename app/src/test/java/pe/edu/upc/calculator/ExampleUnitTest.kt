@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import pe.edu.upc.calculator.features.calculator.domain.ExpressionParser
+import pe.edu.upc.calculator.features.calculator.presentation.CalculatorDigitLimitValidator
 
 class ExampleUnitTest {
 
@@ -57,6 +58,50 @@ class ExampleUnitTest {
         assertThrows(IllegalArgumentException::class.java) {
             ExpressionParser("50%%").parse()
         }
+    }
+
+    @Test
+    fun numberWith15DigitsDoesNotExceedLimit() {
+        val display = "123456789012345"
+        val validator = CalculatorDigitLimitValidator()
+
+        assertEquals(
+            false,
+            validator.exceedsLimit(display, display.length)
+        )
+    }
+
+    @Test
+    fun numberWith16DigitsExceedsLimit() {
+        val display = "1234567890123456"
+        val validator = CalculatorDigitLimitValidator()
+
+        assertEquals(
+            true,
+            validator.exceedsLimit(display, display.length)
+        )
+    }
+
+    @Test
+    fun digitsInSeparateNumbersAreCountedIndependently() {
+        val display = "123456789012345+67890"
+        val validator = CalculatorDigitLimitValidator()
+
+        assertEquals(
+            false,
+            validator.exceedsLimit(display, 15)
+        )
+    }
+
+    @Test
+    fun decimalSeparatorDoesNotCountAsDigit() {
+        val display = "12345678901234.5"
+        val validator = CalculatorDigitLimitValidator()
+
+        assertEquals(
+            false,
+            validator.exceedsLimit(display, display.length)
+        )
     }
 
     private fun assertDecimalEquals(expected: String, expression: String) {
