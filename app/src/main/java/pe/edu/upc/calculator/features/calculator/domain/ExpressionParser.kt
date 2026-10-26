@@ -1,67 +1,40 @@
 package pe.edu.upc.calculator.features.calculator.domain
 
 import java.math.BigDecimal
-import java.math.MathContext
-import java.math.RoundingMode
 
-enum class ExpressionError {
-    EMPTY_EXPRESSION,
-    INCOMPLETE_EXPRESSION,
-    INVALID_RESULT,
-    DIVISION_BY_ZERO,
-    INVALID_PERCENTAGE,
-    UNCLOSED_PARENTHESIS,
-    INVALID_DECIMAL,
-    EXPECTED_NUMBER,
-    INVALID_NUMBER,
-    DIGIT_LIMIT
-}
+class ExpressionParser(
+    expression: String
+) {
 
-class ExpressionParseException(
-    val error: ExpressionError,
-    val startIndex: Int? = null,
-    val endIndex: Int? = null
-) : IllegalArgumentException()
+    private val input = ExpressionInputNormalizer()
+        .normalize(expression)
 
-class ExpressionParser(expression: String) {
+    private val numberReader = ExpressionNumberReader(input)
 
-    private val input = expression
-        .replace("×", "*")
-        .replace("÷", "/")
-        .replace("−", "-")
-        .replace(" ", "")
+    private val inputValidator = ExpressionInputValidator()
+
+    private val resultValidator = ExpressionResultValidator()
+
+    private val parenthesisValidator = ExpressionParenthesisValidator()
 
     private var position = 0
 
-    private data class ParsedValue(
-        val value: BigDecimal,
-        val isPercent: Boolean = false
-    )
+    private val percentageCalculator = ExpressionPercentageCalculator()
+
+    private val divisionCalculator = ExpressionDivisionCalculator()
+
+    private val postfixCalculator =
+        ExpressionPostfixCalculator(percentageCalculator)
 
     fun parse(): BigDecimal {
-        if (input.isBlank()) {
-            throw ExpressionParseException(
-                ExpressionError.EMPTY_EXPRESSION
-            )
-        }
-
-        if (input.lastOrNull() in listOf('+', '-', '*', '/', '(')) {
-            throw ExpressionParseException(
-                ExpressionError.INCOMPLETE_EXPRESSION,
-                startIndex = (input.length - 1).coerceAtLeast(0),
-                endIndex = input.length
-            )
-        }
+        inputValidator.validate(input)
 
         val result = parseExpression()
 
-        if (position != input.length) {
-            throw ExpressionParseException(
-                ExpressionError.INVALID_NUMBER,
-                startIndex = position.coerceAtMost(input.length - 1).coerceAtLeast(0),
-                endIndex = input.length
-            )
-        }
+        resultValidator.validate(
+            input = input,
+            position = position
+        )
 
         return result.value
     }
@@ -76,13 +49,7 @@ class ExpressionParser(expression: String) {
                     val right = parseTerm()
 
                     left = ParsedValue(
-                        value = if (right.isPercent) {
-                            left.value.add(
-                                left.value.multiply(right.value)
-                            )
-                        } else {
-                            left.value.add(right.value)
-                        }
+                        value = percentageCalculator.add(left.value, right)
                     )
                 }
 
@@ -91,13 +58,7 @@ class ExpressionParser(expression: String) {
                     val right = parseTerm()
 
                     left = ParsedValue(
-                        value = if (right.isPercent) {
-                            left.value.subtract(
-                                left.value.multiply(right.value)
-                            )
-                        } else {
-                            left.value.subtract(right.value)
-                        }
+                        value = percentageCalculator.subtract(left.value, right)
                     )
                 }
 
@@ -128,18 +89,12 @@ class ExpressionParser(expression: String) {
 
                     val right = parseUnary()
 
-                    if (right.value.compareTo(BigDecimal.ZERO) == 0) {
-                        throw ExpressionParseException(
-                            ExpressionError.DIVISION_BY_ZERO,
-                            startIndex = operatorPosition,
-                            endIndex = position
-                        )
-                    }
-
                     left = ParsedValue(
-                        left.value.divide(
-                            right.value,
-                            DIVISION_CONTEXT
+                        divisionCalculator.divide(
+                            left = left.value,
+                            right = right.value,
+                            operatorPosition = operatorPosition,
+                            endPosition = position
                         )
                     )
                 }
@@ -180,17 +135,10 @@ class ExpressionParser(expression: String) {
         var result = parsePrimary()
 
         if (consume('%')) {
-            result = ParsedValue(
-                value = result.value.divide(ONE_HUNDRED),
-                isPercent = true
-            )
+            result = postfixCalculator.applyPercent(result)
 
             if (position < input.length && input[position] == '%') {
-                throw ExpressionParseException(
-                    ExpressionError.INVALID_PERCENTAGE,
-                    startIndex = position - 1,
-                    endIndex = position + 1
-                )
+                postfixCalculator.validatePercent(position)
             }
         }
 
@@ -203,96 +151,21 @@ class ExpressionParser(expression: String) {
         if (consume('(')) {
             val value = parseExpression()
 
-            if (!consume(')')) {
-                throw ExpressionParseException(
-                    ExpressionError.UNCLOSED_PARENTHESIS,
-                    startIndex = openingPosition,
-                    endIndex = openingPosition + 1
-                )
-            }
+            val closingParenthesisFound = consume(')')
+
+            parenthesisValidator.validateClosingParenthesis(
+                openingPosition = openingPosition,
+                closingParenthesisFound = closingParenthesisFound
+            )
 
             return value
         }
 
-        val start = position
-        var decimalFound = false
-        var digitsFound = 0
+        val parsedNumber = numberReader.read(position)
 
-        while (position < input.length) {
-            when (input[position]) {
-                in '0'..'9' -> {
-                    digitsFound++
-                    position++
-                }
+        position = parsedNumber.endPosition
 
-                '.' -> {
-                    if (decimalFound) {
-                        throw ExpressionParseException(
-                            ExpressionError.INVALID_DECIMAL,
-                            startIndex = start,
-                            endIndex = position + 1
-                        )
-                    }
-
-                    decimalFound = true
-                    position++
-                }
-
-                else -> break
-            }
-        }
-
-        if (digitsFound == 0) {
-            throw ExpressionParseException(
-                if (decimalFound) {
-                    ExpressionError.INVALID_DECIMAL
-                } else {
-                    ExpressionError.EXPECTED_NUMBER
-                },
-                startIndex = start,
-                endIndex = (position + 1).coerceAtMost(input.length)
-            )
-        }
-
-        if (position < input.length &&
-            (input[position] == 'e' || input[position] == 'E')
-        ) {
-            position++
-
-            if (position < input.length &&
-                (input[position] == '+' || input[position] == '-')
-            ) {
-                position++
-            }
-
-            val exponentStart = position
-
-            while (position < input.length &&
-                input[position] in '0'..'9'
-            ) {
-                position++
-            }
-
-            if (position == exponentStart) {
-                throw ExpressionParseException(
-                    ExpressionError.INVALID_NUMBER,
-                    startIndex = start,
-                    endIndex = position
-                )
-            }
-        }
-
-        val number = input.substring(start, position)
-
-        return try {
-            ParsedValue(BigDecimal(number))
-        } catch (_: NumberFormatException) {
-            throw ExpressionParseException(
-                ExpressionError.INVALID_NUMBER,
-                startIndex = start,
-                endIndex = position
-            )
-        }
+        return ParsedValue(parsedNumber.value)
     }
 
     private fun consume(char: Char): Boolean {
@@ -305,14 +178,5 @@ class ExpressionParser(expression: String) {
         }
 
         return false
-    }
-
-    private companion object {
-        val ONE_HUNDRED = BigDecimal("100")
-
-        val DIVISION_CONTEXT = MathContext(
-            16,
-            RoundingMode.HALF_EVEN
-        )
     }
 }
