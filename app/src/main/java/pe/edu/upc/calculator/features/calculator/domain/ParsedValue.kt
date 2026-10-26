@@ -1,4 +1,8 @@
 package pe.edu.upc.calculator.features.calculator.domain
 
-class ParsedValue {
-}
+import java.math.BigDecimal
+
+internal data class ParsedValue(
+    val value: BigDecimal,
+    val isPercent: Boolean = false
+)
