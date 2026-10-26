@@ -29,6 +29,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Surface
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
+import pe.edu.upc.calculator.features.calculator.presentation.utils.calculatorToolbarIconSize
+import pe.edu.upc.calculator.features.calculator.presentation.utils.calculatorToolbarBackspaceIconSize
+import pe.edu.upc.calculator.features.calculator.presentation.utils.calculatorToolbarBackspaceTouchTargetSize
+import pe.edu.upc.calculator.features.calculator.presentation.utils.calculatorToolbarBottomSpacing
+import pe.edu.upc.calculator.features.calculator.presentation.utils.BACKSPACE_LONG_PRESS_DELAY_MS
+import pe.edu.upc.calculator.features.calculator.presentation.utils.BACKSPACE_REPEAT_INTERVAL_MS
 import pe.edu.upc.calculator.core.designsystems.icons.BackspaceFilled
 import pe.edu.upc.calculator.core.designsystems.icons.CalculatorFilled
 import pe.edu.upc.calculator.core.designsystems.icons.HistoryOutlined
@@ -46,11 +52,11 @@ fun CalculatorToolbar(
 
     LaunchedEffect(isBackspacePressed) {
         if (isBackspacePressed) {
-            delay(400.milliseconds)
+            delay(BACKSPACE_LONG_PRESS_DELAY_MS.milliseconds)
 
             while (isBackspacePressed) {
                 onBackspaceClick()
-                delay(70.milliseconds)
+                delay(BACKSPACE_REPEAT_INTERVAL_MS.milliseconds)
             }
         }
     }
@@ -83,7 +89,7 @@ fun CalculatorToolbar(
                         ),
                         contentDescription = null,
                         tint = GreenAccent,
-                        modifier = Modifier.size(26.dp)
+                        modifier = Modifier.size(calculatorToolbarIconSize())
                     )
                 }
             }
@@ -122,14 +128,14 @@ fun CalculatorToolbar(
                     color = Color.Transparent
                 ) {
                     Box(
-                        modifier = Modifier.size(48.dp),
+                        modifier = Modifier.size(calculatorToolbarBackspaceTouchTargetSize()),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             painter = painterResource(BackspaceFilled),
                             contentDescription = "Borrar",
                             tint = GreenAccent,
-                            modifier = Modifier.size(30.dp)
+                            modifier = Modifier.size(calculatorToolbarBackspaceIconSize())
                         )
                     }
                 }
@@ -137,7 +143,7 @@ fun CalculatorToolbar(
         }
 
         Spacer(
-            modifier = Modifier.size(8.dp)
+            modifier = Modifier.size(calculatorToolbarBottomSpacing())
         )
 
         HorizontalDivider(
