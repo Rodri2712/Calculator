@@ -1,8 +1,5 @@
 package pe.edu.upc.calculator.features.calculator.presentation.components
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -19,11 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
-import pe.edu.upc.calculator.core.designsystems.theme.EqualsButtonColor
-import pe.edu.upc.calculator.core.designsystems.theme.NumberButtonColor
-import pe.edu.upc.calculator.core.designsystems.theme.OperatorButtonColor
+import pe.edu.upc.calculator.features.calculator.presentation.animations.rememberCalculatorButtonScale
+import pe.edu.upc.calculator.features.calculator.presentation.utils.calculatorButtonBackgroundColor
+import pe.edu.upc.calculator.features.calculator.presentation.utils.calculatorButtonTextColor
+import pe.edu.upc.calculator.features.calculator.presentation.utils.calculatorButtonTextSize
+import pe.edu.upc.calculator.features.calculator.presentation.utils.calculatorButtonFontWeight
 
 enum class ButtonStyle {
     Number,
@@ -44,38 +41,15 @@ fun CalculatorButton(
 
     val isPressed by interactionSource.collectIsPressedAsState()
 
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.93f else 1f,
-        animationSpec = tween(
-            durationMillis = if (isPressed) 80 else 140,
-            easing = FastOutSlowInEasing
-        ),
-        label = "button_press_scale"
-    )
+    val scale = rememberCalculatorButtonScale(isPressed)
 
-    val backgroundColor = when (style) {
-        ButtonStyle.Number -> NumberButtonColor
-        ButtonStyle.Operator -> OperatorButtonColor
-        ButtonStyle.Equals -> EqualsButtonColor
-    }
+    val backgroundColor = calculatorButtonBackgroundColor(style)
 
-    val textColor = when (style) {
-        ButtonStyle.Number -> Color.White
-        ButtonStyle.Operator -> Color.Black
-        ButtonStyle.Equals -> Color.White
-    }
+    val textColor = calculatorButtonTextColor(style)
 
-    val textSize = when (label) {
-        "( )", "+/−" -> 22.sp
-        "÷", "×", "−", "+" -> 34.sp
-        "=" -> 36.sp
-        else -> 32.sp
-    }
+    val textSize = calculatorButtonTextSize(label)
 
-    val fontWeight = when (style) {
-        ButtonStyle.Operator -> FontWeight.Medium
-        else -> FontWeight.Normal
-    }
+    val fontWeight = calculatorButtonFontWeight(style)
 
     Box(
         modifier = modifier
