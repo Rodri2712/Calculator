@@ -1,176 +1,222 @@
 package pe.edu.upc.calculator.features.calculator.presentation.components
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import pe.edu.upc.calculator.core.designsystems.theme.CursorColor
 import pe.edu.upc.calculator.features.calculator.application.FormatExpressionUseCase
-import pe.edu.upc.calculator.features.calculator.presentation.animations.rememberCalculatorCursorAlpha
 import pe.edu.upc.calculator.features.calculator.presentation.utils.CalculatorDisplayLayout
-import pe.edu.upc.calculator.features.calculator.presentation.utils.calculatorCursorPositionFromOffset
-import pe.edu.upc.calculator.features.calculator.presentation.utils.calculatorCursorVerticalBounds
+import pe.edu.upc.calculator.features.calculator.presentation.utils.buildCalculatorDisplayText
+import pe.edu.upc.calculator.features.calculator.presentation.utils.calculatorRawCursorPosition
 import pe.edu.upc.calculator.features.calculator.presentation.utils.calculatorVisualCursorPosition
+import pe.edu.upc.calculator.features.calculator.presentation.utils.createCalculatorDisplayLayout
 
 @Composable
 fun CalculatorExpressionDisplay(
     display: String,
     formattedDisplay: String,
-    displayText: androidx.compose.ui.text.AnnotatedString,
+    displayText: AnnotatedString,
     displayLayout: CalculatorDisplayLayout,
-    showingResult: Boolean,
     cursorPosition: Int,
     formatExpressionUseCase: FormatExpressionUseCase,
-    emptyCursorHeight: Float,
     fontSize: Float,
     modifier: Modifier = Modifier,
-    onCursorPositionChange: (Int) -> Unit
+    onExpressionChange: (String, Int, Int) -> Boolean
 ) {
-    var textLayoutResult by remember {
-        mutableStateOf<TextLayoutResult?>(null)
+    var fieldValue by remember {
+        mutableStateOf(
+            TextFieldValue(
+                text = display,
+                selection = TextRange(
+                    cursorPosition.coerceIn(0, display.length)
+                )
+            )
+        )
     }
 
-    val visualCursorPosition = calculatorVisualCursorPosition(
-        expression = display,
-        rawPosition = cursorPosition,
-        formattedDisplay = formattedDisplay,
-        displayLayout = displayLayout,
-        formatExpressionUseCase = formatExpressionUseCase
-    )
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val textFieldFocusRequester = remember { FocusRequester() }
 
-    val cursorAlpha = rememberCalculatorCursorAlpha()
+    LaunchedEffect(Unit) {
+        textFieldFocusRequester.requestFocus()
+        keyboardController?.hide()
+    }
+
+    LaunchedEffect(display, cursorPosition) {
+        val safeCursorPosition = cursorPosition.coerceIn(0, display.length)
+
+        when {
+            fieldValue.text != display -> {
+                fieldValue = TextFieldValue(
+                    text = display,
+                    selection = TextRange(safeCursorPosition)
+                )
+            }
+
+            fieldValue.selection.collapsed &&
+                    fieldValue.selection.start != safeCursorPosition -> {
+                fieldValue = fieldValue.copy(
+                    selection = TextRange(safeCursorPosition)
+                )
+            }
+        }
+    }
+
+    val expressionTransformation = remember(
+        display,
+        formattedDisplay,
+        displayText,
+        displayLayout,
+        formatExpressionUseCase
+    ) {
+        VisualTransformation { text ->
+            val expression = text.text
+            val formatted = formatExpressionUseCase(expression)
+
+            val layout = if (expression == display) {
+                displayLayout
+            } else {
+                createCalculatorDisplayLayout(formatted)
+            }
+
+            val transformedText = if (expression == display) {
+                displayText
+            } else {
+                buildCalculatorDisplayText(
+                    visualDisplay = layout.visualDisplay,
+                    errorRange = null
+                )
+            }
+
+            TransformedText(
+                text = transformedText,
+                offsetMapping = object : OffsetMapping {
+                    override fun originalToTransformed(offset: Int): Int {
+                        return calculatorVisualCursorPosition(
+                            expression = expression,
+                            rawPosition = offset,
+                            formattedDisplay = formatted,
+                            displayLayout = layout,
+                            formatExpressionUseCase = formatExpressionUseCase
+                        )
+                    }
+
+                    override fun transformedToOriginal(offset: Int): Int {
+                        return calculatorRawCursorPosition(
+                            expression = expression,
+                            visualPosition = offset,
+                            displayLayout = layout,
+                            formatExpressionUseCase = formatExpressionUseCase
+                        )
+                    }
+                }
+            )
+        }
+    }
 
     Box(
         modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.CenterEnd
     ) {
-        Text(
-            text = displayText,
+        BasicTextField(
+            value = fieldValue,
+            onValueChange = { newValue ->
+                val normalizedText = normalizeCalculatorInput(newValue.text)
+
+                if (normalizedText != null) {
+                    val normalizedSelectionStart = normalizeCalculatorInput(
+                        newValue.text.take(newValue.selection.start)
+                    )?.length
+
+                    val normalizedSelectionEnd = normalizeCalculatorInput(
+                        newValue.text.take(newValue.selection.end)
+                    )?.length
+
+                    if (
+                        normalizedSelectionStart != null &&
+                        normalizedSelectionEnd != null
+                    ) {
+                        val selectionStart = normalizedSelectionStart
+                            .coerceIn(0, normalizedText.length)
+
+                        val selectionEnd = normalizedSelectionEnd
+                            .coerceIn(0, normalizedText.length)
+
+                        val accepted = onExpressionChange(
+                            normalizedText,
+                            selectionStart,
+                            selectionEnd
+                        )
+
+                        if (accepted) {
+                            fieldValue = TextFieldValue(
+                                text = normalizedText,
+                                selection = TextRange(
+                                    selectionStart,
+                                    selectionEnd
+                                )
+                            )
+                        }
+                    }
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
-                .pointerInput(display, textLayoutResult) {
-                    detectTapGestures { tapOffset ->
-                        textLayoutResult?.let { layout ->
-                            onCursorPositionChange(
-                                calculatorCursorPositionFromOffset(
-                                    offset = tapOffset,
-                                    textLayoutResult = layout,
-                                    expression = display,
-                                    displayLayout = displayLayout,
-                                    formatExpressionUseCase = formatExpressionUseCase
-                                )
-                            )
-                        }
+                .focusRequester(textFieldFocusRequester)
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused) {
+                        keyboardController?.hide()
                     }
                 },
-            color = Color.White,
-            fontSize = fontSize.sp,
-            fontWeight = FontWeight.Light,
-            textAlign = TextAlign.End,
+            readOnly = false,
+            textStyle = TextStyle(
+                color = Color.White,
+                fontSize = fontSize.sp,
+                fontWeight = FontWeight.Light,
+                textAlign = TextAlign.End
+            ),
+            cursorBrush = SolidColor(CursorColor),
+            visualTransformation = expressionTransformation,
             maxLines = Int.MAX_VALUE,
-            softWrap = true,
-            overflow = TextOverflow.Clip,
-            onTextLayout = { layout ->
-                textLayoutResult = layout
+            decorationBox = { innerTextField ->
+                innerTextField()
             }
         )
+    }
+}
 
-        Canvas(
-            modifier = Modifier
-                .matchParentSize()
-                .pointerInput(display, showingResult) {
-                    detectTapGestures { offset ->
-                        val layout = textLayoutResult
+private fun normalizeCalculatorInput(input: String): String? {
+    val normalized = input
+        .filterNot { it.isWhitespace() || it == ',' }
+        .replace("-", "−")
+        .replace("*", "×")
+        .replace("/", "÷")
 
-                        if (layout != null && !showingResult) {
-                            onCursorPositionChange(
-                                calculatorCursorPositionFromOffset(
-                                    offset = offset,
-                                    textLayoutResult = layout,
-                                    expression = display,
-                                    displayLayout = displayLayout,
-                                    formatExpressionUseCase = formatExpressionUseCase
-                                )
-                            )
-                        }
-                    }
-                }
-                .pointerInput(display, showingResult) {
-                    detectDragGestures(
-                        onDragStart = { offset ->
-                            val layout = textLayoutResult
-
-                            if (layout != null && !showingResult) {
-                                onCursorPositionChange(
-                                    calculatorCursorPositionFromOffset(
-                                        offset = offset,
-                                        textLayoutResult = layout,
-                                        expression = display,
-                                        displayLayout = displayLayout,
-                                        formatExpressionUseCase = formatExpressionUseCase
-                                    )
-                                )
-                            }
-                        },
-                        onDrag = { change, _ ->
-                            val layout = textLayoutResult
-
-                            if (layout != null && !showingResult) {
-                                onCursorPositionChange(
-                                    calculatorCursorPositionFromOffset(
-                                        offset = change.position,
-                                        textLayoutResult = layout,
-                                        expression = display,
-                                        displayLayout = displayLayout,
-                                        formatExpressionUseCase = formatExpressionUseCase
-                                    )
-                                )
-                                change.consume()
-                            }
-                        }
-                    )
-                }
-        ) {
-            val layout = textLayoutResult
-
-            if (layout != null && !showingResult) {
-                val cursorRect = layout.getCursorRect(visualCursorPosition)
-
-                val (cursorTop, cursorBottom) = calculatorCursorVerticalBounds(
-                    display = display,
-                    layout = layout,
-                    cursorPosition = visualCursorPosition,
-                    canvasHeight = size.height,
-                    emptyCursorHeight = emptyCursorHeight
-                )
-
-                drawLine(
-                    color = CursorColor.copy(alpha = cursorAlpha),
-                    start = Offset(cursorRect.left, cursorTop),
-                    end = Offset(cursorRect.left, cursorBottom),
-                    strokeWidth = 2.5.dp.toPx(),
-                    cap = StrokeCap.Round
-                )
-            }
-        }
+    return normalized.takeIf {
+        it.matches(Regex("""[0-9.+−×÷()%]*"""))
     }
 }
