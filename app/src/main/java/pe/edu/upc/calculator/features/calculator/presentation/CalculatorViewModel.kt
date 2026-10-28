@@ -30,6 +30,63 @@ class CalculatorViewModel @Inject constructor(
     val state: StateFlow<CalculatorUiState> = _state.asStateFlow()
 
     private var justCalculated = false
+    private var selectionStart = 0
+    private var selectionEnd = 0
+
+    fun onExpressionChange(
+        expression: String,
+        start: Int,
+        end: Int
+    ): Boolean {
+        val currentDisplay = _state.value.display
+
+        val safeStart = start.coerceIn(0, expression.length)
+        val safeEnd = end.coerceIn(0, expression.length)
+
+        if (expression == currentDisplay) {
+            selectionStart = safeStart
+            selectionEnd = safeEnd
+
+            if (safeStart == safeEnd) {
+                onCursorPositionChange(safeStart)
+            }
+
+            return true
+        }
+
+        val exceedsDigitLimit = Regex("""\d+(?:\.\d*)?|\.\d+""")
+            .findAll(expression)
+            .any { number ->
+                number.value.count { it.isDigit() } > 15
+            }
+
+        if (exceedsDigitLimit) {
+            _state.update { current ->
+                current.copy(
+                    error = ExpressionError.DIGIT_LIMIT,
+                    errorToastId = current.errorToastId + 1
+                )
+            }
+            return false
+        }
+
+        selectionStart = safeStart
+        selectionEnd = safeEnd
+        justCalculated = false
+
+        _state.update { current ->
+            current.copy(
+                display = expression,
+                cursorPosition = safeStart,
+                isResultDisplayed = false,
+                error = null,
+                errorStartIndex = null,
+                errorEndIndex = null
+            )
+        }
+
+        return true
+    }
 
     fun onCursorPositionChange(position: Int) {
         _state.update { current ->
