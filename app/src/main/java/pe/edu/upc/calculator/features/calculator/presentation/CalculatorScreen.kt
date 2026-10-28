@@ -64,7 +64,7 @@ fun CalculatorScreen(
     onClearHistory: () -> Unit = {},
     onHistoryItemClick: (HistoryItem) -> Unit = {},
     previewResult: (String) -> String? = { null },
-    onCursorPositionChange: (Int) -> Unit = {}
+    onExpressionChange: (String, Int, Int) -> Boolean = { _, _, _ -> true }
 ) {
     val errorMessage: String? = state.error?.let { error ->
         val resourceId = when (error) {
@@ -125,11 +125,11 @@ fun CalculatorScreen(
         ) {
             Spacer(modifier = Modifier.weight(1.1f))
 
-        CalculatorDisplay(
-            state = state,
-            previewResult = previewResult,
-            onCursorPositionChange = onCursorPositionChange
-        )
+            CalculatorDisplay(
+                state = state,
+                previewResult = previewResult,
+                onExpressionChange = onExpressionChange
+            )
 
         Spacer(modifier = Modifier.weight(0.9f))
 
