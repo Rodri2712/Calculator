@@ -18,7 +18,7 @@ fun MainScreen(
         onOperatorClick = calculatorViewModel::onOperatorClick,
         onClearClick = calculatorViewModel::onClearClick,
         onBackspaceClick = calculatorViewModel::onBackspaceClick,
-        onCursorPositionChange = calculatorViewModel::onCursorPositionChange,
+        onExpressionChange = calculatorViewModel::onExpressionChange,
         onEqualsClick = calculatorViewModel::onEqualsClick,
         onHistoryClick = calculatorViewModel::toggleHistory,
         onClearHistory = calculatorViewModel::clearHistory,
