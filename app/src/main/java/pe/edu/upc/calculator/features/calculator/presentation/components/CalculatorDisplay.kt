@@ -3,26 +3,22 @@ package pe.edu.upc.calculator.features.calculator.presentation.components
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import pe.edu.upc.calculator.features.calculator.presentation.utils.calculatorDisplayFontSize
 import pe.edu.upc.calculator.features.calculator.presentation.utils.createCalculatorDisplayLayout
-import pe.edu.upc.calculator.features.calculator.presentation.utils.hasCalculatorOperation
 import pe.edu.upc.calculator.features.calculator.presentation.animations.rememberCalculatorDisplayFontSize
 import pe.edu.upc.calculator.features.calculator.presentation.animations.rememberCalculatorHistoryAnimation
 import pe.edu.upc.calculator.features.calculator.application.FormatExpressionUseCase
 import pe.edu.upc.calculator.features.calculator.presentation.CalculatorUiState
 import pe.edu.upc.calculator.features.calculator.presentation.utils.calculatorErrorRange
 import pe.edu.upc.calculator.features.calculator.presentation.utils.buildCalculatorDisplayText
-import pe.edu.upc.calculator.features.calculator.presentation.utils.shouldShowCalculatorPreview
 
 @Composable
 fun CalculatorDisplay(
     state: CalculatorUiState,
     previewResult: (String) -> String?,
-    onCursorPositionChange: (Int) -> Unit,
+    onExpressionChange: (String, Int, Int) -> Boolean,
     modifier: Modifier = Modifier
 ) {
     val display = state.display
@@ -59,17 +55,11 @@ fun CalculatorDisplay(
 
     val showingResult = state.isResultDisplayed
 
-    val density = LocalDensity.current
-
     val historyAnimation = rememberCalculatorHistoryAnimation(
         historySelectionId = state.historySelectionId
     )
 
     val historyScale = historyAnimation.scale
-
-    val emptyCursorHeight = with(density) {
-        76.sp.toPx()
-    }
 
     val targetFontSize = calculatorDisplayFontSize(
         showingResult = showingResult,
@@ -87,10 +77,8 @@ fun CalculatorDisplay(
         formattedDisplay = formattedDisplay,
         displayText = displayText,
         displayLayout = displayLayout,
-        showingResult = showingResult,
         cursorPosition = state.cursorPosition,
         formatExpressionUseCase = formatExpressionUseCase,
-        emptyCursorHeight = emptyCursorHeight,
         fontSize = displayFontSize,
         modifier = modifier.graphicsLayer {
             val fontScale = animatedVisualFontSize / displayFontSize
@@ -103,7 +91,7 @@ fun CalculatorDisplay(
                 pivotFractionY = 0.5f
             )
         },
-        onCursorPositionChange = onCursorPositionChange
+        onExpressionChange = onExpressionChange
     )
 
     CalculatorDisplayPreview(
