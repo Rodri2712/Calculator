@@ -3,12 +3,12 @@ package pe.edu.upc.calculator.features.calculator.presentation.components
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.runtime.key
 import pe.edu.upc.calculator.features.calculator.presentation.utils.calculatorDisplayFontSize
 import pe.edu.upc.calculator.features.calculator.presentation.utils.createCalculatorDisplayLayout
-import pe.edu.upc.calculator.features.calculator.presentation.animations.rememberCalculatorDisplayFontSize
-import pe.edu.upc.calculator.features.calculator.presentation.animations.rememberCalculatorHistoryAnimation
 import pe.edu.upc.calculator.features.calculator.application.FormatExpressionUseCase
 import pe.edu.upc.calculator.features.calculator.presentation.CalculatorUiState
 import pe.edu.upc.calculator.features.calculator.presentation.utils.calculatorErrorRange
@@ -55,22 +55,21 @@ fun CalculatorDisplay(
 
     val showingResult = state.isResultDisplayed
 
-    val historyAnimation = rememberCalculatorHistoryAnimation(
-        historySelectionId = state.historySelectionId
-    )
-
-    val historyScale = historyAnimation.scale
-
     val targetFontSize = calculatorDisplayFontSize(
         showingResult = showingResult,
         displayLength = formattedDisplay.length
     )
 
-    val displayFontSize = targetFontSize.value
-
-    val animatedVisualFontSize = rememberCalculatorDisplayFontSize(
-        targetFontSize = displayFontSize
-    )
+    val animatedFontSize = key(state.historySelectionId) {
+        animateFloatAsState(
+            targetValue = targetFontSize.value,
+            animationSpec = tween(
+                durationMillis = if (display.isEmpty()) 220 else 120,
+                easing = FastOutSlowInEasing
+            ),
+            label = "CalculatorDisplayFontSize"
+        )
+    }
 
     CalculatorExpressionDisplay(
         display = display,
@@ -79,18 +78,9 @@ fun CalculatorDisplay(
         displayLayout = displayLayout,
         cursorPosition = state.cursorPosition,
         formatExpressionUseCase = formatExpressionUseCase,
-        fontSize = displayFontSize,
-        modifier = modifier.graphicsLayer {
-            val fontScale = animatedVisualFontSize / displayFontSize
-
-            scaleX = historyScale.value * fontScale
-            scaleY = historyScale.value * fontScale
-
-            transformOrigin = TransformOrigin(
-                pivotFractionX = 1f,
-                pivotFractionY = 0.5f
-            )
-        },
+        fontSize = animatedFontSize.value,
+        historySelectionId = state.historySelectionId,
+        modifier = modifier,
         onExpressionChange = onExpressionChange
     )
 
