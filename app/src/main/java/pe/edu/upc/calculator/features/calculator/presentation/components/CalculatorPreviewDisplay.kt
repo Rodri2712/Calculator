@@ -13,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,9 +57,9 @@ fun CalculatorPreviewDisplay(
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Light,
                 textAlign = TextAlign.End,
-                maxLines = Int.MAX_VALUE,
-                softWrap = true,
-                overflow = TextOverflow.Clip
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
