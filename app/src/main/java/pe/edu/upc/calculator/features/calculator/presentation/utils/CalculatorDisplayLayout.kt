@@ -21,13 +21,14 @@ data class CalculatorDisplayLayout(
     }
 }
 
+private val calculatorLineBreakOperators = setOf('+', '-', '−', '×', '÷')
 fun createCalculatorDisplayLayout(
     formattedDisplay: String
 ): CalculatorDisplayLayout {
-    val lineBreakPositions = if (formattedDisplay.length > 24) {
+    val lineBreakPositions = if (formattedDisplay.length > 32) {
         formattedDisplay.indices.filter { index ->
             index > 0 &&
-                    formattedDisplay[index] in listOf('+', '-', '−', '×', '÷') &&
+                    formattedDisplay[index] in calculatorLineBreakOperators &&
                     (
                             formattedDisplay[index - 1].isDigit() ||
                                     formattedDisplay[index - 1] == ')' ||
