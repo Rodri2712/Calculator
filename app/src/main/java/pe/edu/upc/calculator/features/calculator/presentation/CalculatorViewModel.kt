@@ -12,6 +12,7 @@ import pe.edu.upc.calculator.features.calculator.application.GetHistoryUseCase
 import pe.edu.upc.calculator.features.calculator.domain.HistoryItem
 import pe.edu.upc.calculator.features.calculator.domain.ExpressionError
 
+private val calculatorNumberRegex = Regex("""\d+(?:\.\d*)?|\.\d+""")
 @HiltViewModel
 class CalculatorViewModel @Inject constructor(
     private val resultHandler: CalculatorResultHandler,
@@ -54,7 +55,7 @@ class CalculatorViewModel @Inject constructor(
             return true
         }
 
-        val exceedsDigitLimit = Regex("""\d+(?:\.\d*)?|\.\d+""")
+        val exceedsDigitLimit = calculatorNumberRegex
             .findAll(expression)
             .any { number ->
                 number.value.count { it.isDigit() } > 15
@@ -267,7 +268,6 @@ class CalculatorViewModel @Inject constructor(
             it.copy(
                 display = item.operation,
                 cursorPosition = item.operation.length,
-                isHistoryVisible = false,
                 isResultDisplayed = false,
                 error = null,
                 errorStartIndex = null,
