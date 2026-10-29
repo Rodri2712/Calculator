@@ -1,5 +1,13 @@
 package pe.edu.upc.calculator.features.calculator.presentation.components
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.BasicTextField
@@ -18,6 +26,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +54,7 @@ fun CalculatorExpressionDisplay(
     cursorPosition: Int,
     formatExpressionUseCase: FormatExpressionUseCase,
     fontSize: Float,
+    historySelectionId: Int,
     modifier: Modifier = Modifier,
     onExpressionChange: (String, Int, Int) -> Boolean
 ) {
@@ -59,6 +70,47 @@ fun CalculatorExpressionDisplay(
     }
 
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    val density = LocalDensity.current
+    val entryOffsetPx = with(density) { 8.dp.toPx() }
+
+    val entryScale = remember {
+        Animatable(1f)
+    }
+
+    val entryOffset = remember {
+        Animatable(0f)
+    }
+
+    LaunchedEffect(historySelectionId) {
+        if (historySelectionId > 0) {
+            entryScale.snapTo(0.94f)
+            entryOffset.snapTo(entryOffsetPx)
+
+            coroutineScope {
+                launch {
+                    entryScale.animateTo(
+                        targetValue = 1f,
+                        animationSpec = tween(
+                            durationMillis = 220,
+                            easing = FastOutSlowInEasing
+                        )
+                    )
+                }
+
+                launch {
+                    entryOffset.animateTo(
+                        targetValue = 0f,
+                        animationSpec = tween(
+                            durationMillis = 220,
+                            easing = FastOutSlowInEasing
+                        )
+                    )
+                }
+            }
+        }
+    }
+
     val textFieldFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
@@ -139,8 +191,10 @@ fun CalculatorExpressionDisplay(
     }
 
     Box(
-        modifier = modifier.fillMaxWidth(),
-        contentAlignment = Alignment.CenterEnd
+        modifier = modifier
+            .fillMaxWidth()
+            .height(120.dp),
+        contentAlignment = Alignment.BottomEnd
     ) {
         BasicTextField(
             value = fieldValue,
@@ -186,6 +240,12 @@ fun CalculatorExpressionDisplay(
             },
             modifier = Modifier
                 .fillMaxWidth()
+                .graphicsLayer {
+                    scaleX = entryScale.value
+                    scaleY = entryScale.value
+                    translationX = entryOffset.value
+                    transformOrigin = TransformOrigin(1f, 1f)
+                }
                 .focusRequester(textFieldFocusRequester)
                 .onFocusChanged { focusState ->
                     if (focusState.isFocused) {
@@ -201,14 +261,12 @@ fun CalculatorExpressionDisplay(
             ),
             cursorBrush = SolidColor(CursorColor),
             visualTransformation = expressionTransformation,
-            maxLines = Int.MAX_VALUE,
-            decorationBox = { innerTextField ->
-                innerTextField()
-            }
+            maxLines = Int.MAX_VALUE
         )
     }
 }
 
+private val calculatorInputRegex = Regex("""[0-9.+−×÷()%]*""")
 private fun normalizeCalculatorInput(input: String): String? {
     val normalized = input
         .filterNot { it.isWhitespace() || it == ',' }
@@ -217,6 +275,6 @@ private fun normalizeCalculatorInput(input: String): String? {
         .replace("/", "÷")
 
     return normalized.takeIf {
-        it.matches(Regex("""[0-9.+−×÷()%]*"""))
+        calculatorInputRegex.matches(it)
     }
 }
